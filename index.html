@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Vacunación Antirrábica Putumayo</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- PWA Config -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d1b2a">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+
+    <!-- Loading Overlay -->
+    <div id="loading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Cargando datos de vacunación...</p>
+    </div>
+
+    <!-- App Container -->
+    <div id="dashboard" class="app-container" style="display:none;">
+        
+        <!-- Header -->
+        <header class="glass-panel header">
+            <div class="header-logo">
+                <img src="logo SSD.png" alt="Logo SSD" style="max-width: 60px; filter: drop-shadow(0 0 10px rgba(100,255,218,0.3));">
+            </div>
+            <div class="header-titles">
+                <h2 class="subtitle">SECRETARIA DE SALUD DEPARTAMENTAL DEL PUTUMAYO</h2>
+                <h1 class="title">SISTEMA DE VISUALIZACIÓN DE VACUNACIÓN ANTIRRÁBICA – ETV Y ZOONOSIS</h1>
+            </div>
+            <div class="header-actions">
+                <div class="user-profile">
+                    <img src="https://ui-avatars.com/api/?name=Admin+Putumayo&background=0D8ABC&color=fff" alt="User Profile">
+                    <span>Admin</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- KPI Filters section -->
+        <section class="kpi-controls-section">
+            <div class="filter-card glass-panel flex-center">
+                <label for="year-filter"><i class="fa-solid fa-calendar"></i> AÑO DE VACUNACIÓN</label>
+                <select id="year-filter" class="styled-select">
+                    <option value="TODOS" selected>TODOS (25-26)</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                </select>
+            </div>
+            
+            <div class="kpi-grid">
+                <div class="kpi-card glass-panel">
+                    <div class="kpi-icon"><i class="fa-solid fa-paw"></i></div>
+                    <div class="kpi-info">
+                        <h3>TOTAL ANIMALES VACUNADOS</h3>
+                        <p id="kpi-total" class="kpi-value">0</p>
+                    </div>
+                </div>
+                <div class="kpi-card glass-panel">
+                    <div class="kpi-icon"><i class="fa-solid fa-dog"></i></div>
+                    <div class="kpi-info">
+                        <h3>PERROS VACUNADOS</h3>
+                        <p id="kpi-dogs" class="kpi-value text-accent-green">0</p>
+                    </div>
+                </div>
+                <div class="kpi-card glass-panel">
+                    <div class="kpi-icon"><i class="fa-solid fa-cat"></i></div>
+                    <div class="kpi-info">
+                        <h3>GATOS VACUNADOS</h3>
+                        <p id="kpi-cats" class="kpi-value text-accent-cyan">0</p>
+                    </div>
+                </div>
+
+                <div class="kpi-card glass-panel">
+                    <div class="kpi-icon"><i class="fa-solid fa-id-card"></i></div>
+                    <div class="kpi-info">
+                        <h3>CÉDULAS UNICAS REGISTRADAS</h3>
+                        <p id="kpi-ids" class="kpi-value">0</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Main Content Area Grid -->
+        <main class="dashboard-grid">
+            
+            <!-- Left Layout: Top (Charts), Bottom (Tables) -->
+            <div class="grid-main-content">
+                
+                <!-- Charts Section -->
+                <div class="charts-row">
+                    <div class="chart-card glass-panel flex-2">
+                        <h3><i class="fa-solid fa-chart-bar"></i> VACUNACIÓN POR MUNICIPIO (TOP 10)</h3>
+                        <div class="chart-container">
+                            <canvas id="barChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card glass-panel flex-1">
+                        <h3><i class="fa-solid fa-chart-pie"></i> ESPECIE</h3>
+                        <div class="chart-container pie-container">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed View Section -->
+                <div class="detailed-view-section glass-panel">
+                    <div class="section-header">
+                        <h3 id="table-title"><i class="fa-solid fa-list"></i> LISTADO DETALLADO DE REGISTROS DE VACUNACIÓN</h3>
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="search-input" class="styled-input" placeholder="Buscar propietario, mascota o ID...">
+                        </div>
+                    </div>
+
+                    <div class="drill-down-container">
+                        <!-- Left: Municipalities List -->
+                        <div class="municipalities-list" id="municipalities-container">
+                            <!-- Populated by JS -->
+                        </div>
+                        
+                        <!-- Right: Table Detail -->
+                        <div class="table-detail-container">
+                            <div class="table-responsive" id="table-wrapper">
+                                <table class="styled-table">
+                                    <thead>
+                                        <tr>
+                                            <th>IDENTIFICACIÓN</th>
+                                            <th>PROPIETARIO</th>
+                                            <th>MASCOTA</th>
+                                            <th>ESPECIE</th>
+                                            <th>AÑO</th>
+                                            <th>ÚLTIMA VACUNA</th>
+                                            <th>ESTADO</th>
+                                            <th>ACCIONES</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="records-tbody">
+                                        <!-- Populated by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="pagination" class="pagination"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Detailed View Section Unknown Animal -->
+                <div class="detailed-view-section glass-panel">
+                    <div class="section-header">
+                        <h3 id="table-title-unknown"><i class="fa-solid fa-triangle-exclamation"></i> REGISTRO DE APTR ANIMAL DESCONOCIDO</h3>
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="search-input-unknown" class="styled-input" placeholder="Buscar en animal desconocido...">
+                        </div>
+                    </div>
+
+                    <div class="drill-down-container">
+                        <!-- Left: Municipalities List -->
+                        <div class="municipalities-list" id="municipalities-container-unknown">
+                            <!-- Populated by JS -->
+                        </div>
+                        
+                        <!-- Right: Table Detail -->
+                        <div class="table-detail-container">
+                            <div class="table-responsive" id="table-wrapper-unknown">
+                                <table class="styled-table">
+                                    <thead>
+                                        <tr>
+                                            <th>IDENTIFICACIÓN</th>
+                                            <th>ESPECIE</th>
+                                            <th>MUNICIPIO</th>
+                                            <th>FECHA REGISTRO</th>
+                                            <th>ESTADO SALUD</th>
+                                            <th>ACCIONES</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="records-tbody-unknown">
+                                        <!-- Populated by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="pagination-unknown" class="pagination"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar -->
+            <aside class="grid-sidebar">
+                
+
+
+                <!-- Notifications -->
+                <div class="sidebar-card glass-panel">
+                    <h3><i class="fa-solid fa-bell"></i> NOTIFICACIONES Y ALERTAS</h3>
+                    <div class="alert-item alert-danger" style="cursor: pointer;" onclick="showEmergencyReport()">
+                        <div class="alert-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="alert-content">
+                            <h4>REGISTRO APTR ANIMAL DESCONOCIDO</h4>
+                            <p class="alert-number" id="alert-unknown">0</p>
+                            <span class="alert-desc">Ver formulario rápido</span>
+                        </div>
+                    </div>
+                    <div class="alert-item alert-danger">
+                        <div class="alert-icon"><i class="fa-solid fa-xmark-circle"></i></div>
+                        <div class="alert-content">
+                            <h4>VACUNAS VENCIDAS</h4>
+                            <p class="alert-number" id="alert-vencidas">0</p>
+                            <span class="alert-desc">A nivel departamental</span>
+                        </div>
+                    </div>
+                    <div class="alert-item alert-warning">
+                        <div class="alert-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                        <div class="alert-content">
+                            <h4>VENCIMIENTOS PRÓXIMOS</h4>
+                            <p class="alert-number" id="alert-porvencer">0</p>
+                            <span class="alert-desc">Próximos 60 días</span>
+                        </div>
+                    </div>
+                </div>
+
+
+                
+            </aside>
+        </main>
+    </div>
+
+    <!-- Modal Base (Modals injected dynamically) -->
+    <div id="modal-overlay" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+        <div class="modal glass-panel">
+            <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="modal-title"></h2>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Data -->
+    <script src="data.js"></script>
+    
+    <!-- App Logic -->
+    <script src="app.js"></script>
+
+    <!-- PWA Service Worker -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(registration => {
+              console.log('ServiceWorker registrado con éxito', registration.scope);
+            })
+            .catch(err => {
+              console.log('Error al registrar ServiceWorker', err);
+            });
+        });
+      }
+    </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "Vacunación Antirrábica Putumayo",
+  "short_name": "Vacunación ETV",
+  "description": "Sistema de visualización de vacunación antirrábica ETV y Zoonosis",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0d1b2a",
+  "theme_color": "#00d2ff",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
